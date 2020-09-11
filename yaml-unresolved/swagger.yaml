@@ -1,0 +1,705 @@
+swagger: '2.0'
+info:
+  description: These API endpoints are refactored from XNAT's endpoints in [/data, /service, and /AjaxServlet]
+  version: 1.0.0
+  title: /data to /xapi Refactoring
+  # put the contact info for your development or API team
+  contact:
+    email: info@xnat.org
+
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+# tags are used for organizing operations
+tags:
+- name: project
+  description: Managing and retrieving project listings and properties
+- name: subject
+  description: Managing and retrieving subjects
+- name: experiment
+  description: Managing and retrieving experiments (subject assessors), including sessions and scans
+- name: assessor
+  description: Managing session assessors
+- name: service
+  description: Service calls
+
+paths:
+  /xapi/projects:
+    get:
+      tags:
+      - project
+      summary: returns list of projects
+      operationId: listProjects
+      produces:
+      - application/json
+      parameters:
+      - in: query
+        name: format
+        description: "default: json"
+        required: false
+        type: string
+      - in: query
+        name: restrictTo
+        description: user access level to restrict results to
+        required: false
+        type: string
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            $ref: '#/definitions/JsonList'
+    post:
+      tags:
+      - project
+      summary: add one or more XML project definitions
+      operationId: addProject
+      consumes:
+      - application/xml
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: xmlDefinition
+        description: XML project definition
+        schema:
+          $ref: '#/definitions/JsonList'
+      responses:
+        201:
+          description: item created
+        400:
+          description: invalid input, object invalid
+        409:
+          description: an existing item already exists
+  /xapi/projects/{id}:
+    get:
+      tags:
+      - project
+      summary: returns list of projects
+      operationId: listProject
+      produces:
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      responses:
+        200:
+          description: search result matching criteria
+          schema:
+            $ref: '#/definitions/JsonList'
+        504: 
+          description: permission denied
+    put: 
+      tags: 
+      - project
+      summary: update project metadata
+      operationId: updateProject
+      produces: 
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: body
+        name: xmlDefinition
+        description: XML project definition
+        schema:
+          $ref: '#/definitions/JsonList'
+      responses: 
+        200: 
+          description: Project Updated
+        504: 
+          description: Permission Denied
+    delete: 
+      tags: 
+      - project
+      summary: Delete project
+      parameters:
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      responses: 
+        200: 
+          description: Project Deleted
+        504: 
+          description: Permission Denied
+  /xapi/projects/{id}/config:
+    get: 
+      tags: 
+      - project
+      summary : returns all project config settings
+      operationId: getProjectConfigs
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      responses:
+        200:
+          description: search result matching criteria
+          schema:
+            $ref: '#/definitions/JsonParamList'
+        403: 
+          description: permission denied
+  /xapi/projects/{id}/config/{property}:
+    get:
+      tags:
+      - project
+      summary: returns project setting
+      operationId: getProjectSetting
+      produces:
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: property
+        description: The project config property to retrieve
+        required: true
+        type: string
+      responses:
+        200:
+          description: search result matching criteria
+          schema:
+            $ref: '#/definitions/JsonParam'
+        504: 
+          description: permission denied
+    post: 
+      tags: 
+      - project
+      summary: create individual project setting
+      description: Adds a new individual project attribute
+      operationId: createProjectSetting
+      produces: 
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: property
+        description: The project config property to set
+        required: true
+        type: string
+      - in: body
+        name: setting
+        description: JSON definition
+        schema:
+          $ref: '#/definitions/simpleString'
+      responses: 
+        200: 
+          description: Project Updated
+        504: 
+          description: Permission Denied      
+    put: 
+      tags: 
+      - project
+      summary: update individual project setting
+      description: replaces individual project attribute APIs
+      operationId: updateProjectSetting
+      produces: 
+      - application/json
+      parameters:
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: property
+        description: The project config property to set
+        required: true
+        type: string
+      - in: body
+        name: setting
+        description: JSON definition
+        schema:
+          $ref: '#/definitions/JsonParam'
+      responses: 
+        200: 
+          description: Project Config Setting Updated
+        403: 
+          description: Permission Denied
+  /xapi/projects/{id}/pipelines:
+    get: 
+      tags: 
+      - project
+      summary : Returns all pipelines installed in this project
+      operationId: getProjectPipelines
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      responses:
+        200:
+          description: All project pipelines
+          schema:
+            $ref: '#/definitions/JsonPipelineList'
+        403: 
+          description: permission denied
+    post: 
+      tags: 
+      - project
+      summary : Adds a pipeline to a project
+      operationId: AddProjectPipeline
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: body
+        name: pipeline
+        description: Pipeline object
+        required: true
+        schema: 
+          $ref: '#/definitions/JsonPipeline'
+      responses:
+        201:
+          description: Pipeline added to project
+        403: 
+          description: permission denied
+  /xapi/projects/{id}/pipelines/{pipeline}/config:
+    get: 
+      tags: 
+      - project
+      summary : Returns pipeline config for this project
+      operationId: getProjectPipelineConfig
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: pipeline
+        description: Pipeline Name
+        required: true
+        type: string
+      responses:
+        200:
+          description: Pipeline config for project
+          schema:
+            $ref: '#/definitions/JsonParam'
+        403: 
+          description: permission denied
+    post: 
+      tags: 
+      - project
+      summary : Adds a pipeline configuration to a project
+      operationId: AddProjectPipelineConfig
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: pipeline
+        description: Pipeline Name
+        required: true
+        type: string
+      - in: body
+        name: config
+        description: Pipeline config object
+        required: true
+        schema: 
+          $ref: '#/definitions/JsonParam'
+      responses:
+        201:
+          description: Pipeline config added to project
+        403: 
+          description: permission denied
+    put: 
+      tags: 
+      - project
+      summary : Updates a pipeline configuration to a project
+      operationId: UpdateProjectPipelineConfig
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: pipeline
+        description: Pipeline Name
+        required: true
+        type: string
+      - in: body
+        name: config
+        description: Pipeline config object
+        required: true
+        schema: 
+          $ref: '#/definitions/JsonParam'
+      responses:
+        201:
+          description: Pipeline config updated for project
+        403: 
+          description: permission denied
+
+  /xapi/projects/{id}/users:
+    get: 
+      tags: 
+      - project
+      summary : Returns all project users
+      operationId: getProjectUsers
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: query
+        name: showDisabled
+        description: Includes disabled users
+        required: false
+        type: boolean
+      responses:
+        200:
+          description: All project users
+          schema:
+            $ref: '#/definitions/JsonUserList'
+        403: 
+          description: permission denied
+    post: 
+      tags: 
+      - project
+      summary : Adds a project user
+      operationId: AddProjectUser
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: body
+        name: user
+        description: User object
+        required: true
+        schema: 
+          $ref: '#/definitions/JsonUser'
+      responses:
+        201:
+          description: User Created
+          schema:
+            $ref: '#/definitions/JsonUserList'
+        403: 
+          description: permission denied
+  /xapi/projects/{id}/users/{username}:
+    get: 
+      tags: 
+      - project
+      summary : Returns project user
+      operationId: getProjectUser
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: username
+        description: User to view
+        required: true
+        type: string
+      responses:
+        200:
+          description: Project user with access role
+          schema:
+            $ref: '#/definitions/JsonUser'
+        403: 
+          description: permission denied
+    put: 
+      tags: 
+      - project
+      summary : Updates project user role
+      operationId: updateProjectUser
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: username
+        description: User to update
+        required: true
+        type: string
+      - in: query
+        name: role
+        description: User role/group
+        required: true
+        type: string
+      responses:
+        200:
+          description: Project user with updated access role
+          schema:
+            $ref: '#/definitions/JsonUser'
+        403: 
+          description: permission denied
+    delete: 
+      tags: 
+      - project
+      summary : Deletes user from project
+      operationId: deleteProjectUser
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: Project Id
+        required: true
+        type: string
+      - in: path
+        name: username
+        description: User to remove
+        required: true
+        type: string
+      responses:
+        200:
+          description: Project user removed
+        403: 
+          description: permission denied
+  /xapi/service/pars:
+    get: 
+      tags: 
+      - service
+      summary: Returns all Project Access Requests for the logged-in user. Or, with a project specified in a querystring, returns all Project Access Requests issued by a specific project
+      operationId: listPars
+      produces: 
+      - application/json
+      parameters: 
+      - in: query
+        name: projectId
+        description: Filter on Project ID
+        required: false
+        type: string
+      - in: query
+        name: status
+        description: Filter on PAR Status
+        required: false
+        type: string
+      responses: 
+        200: 
+          description: List of PARS
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/JsonList'
+    post: 
+      tags: 
+      - service
+      summary: Create a new Project Access Request
+      operationId: createPar
+      produces: 
+      - application/json
+      parameters: 
+      - in: body
+        name: model
+        description: Project Access Request
+        required: true
+        schema: 
+          $ref: '#/definitions/JsonParam'
+      responses: 
+        201: 
+          description: Created
+        504: 
+          description: Permission Denied
+  /xapi/service/pars/{id}:
+    get: 
+      tags: 
+      - service
+      summary: Returns a specific Project Access Request
+      operationId: getPar
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: PAR ID
+        required: true
+        type: integer
+      responses: 
+        200: 
+          description: Individual PAR
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ParJson'
+    put: 
+      tags: 
+      - service
+      summary: Update a Project Access Request, either by a user response or by the project owner
+      operationId: updatePar
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: PAR ID
+        required: true
+        type: integer
+      - in: query
+        name: accept
+        description: Accept Request
+        required: false
+        type: boolean
+      - in: query
+        name: reject
+        description: Reject Request
+        required: false
+        type: boolean
+      - in: query
+        name: cancel
+        description: Cancel Request
+        required: false
+        type: boolean
+      responses: 
+        201: 
+          description: PAR Updated
+    delete: 
+      tags: 
+      - service
+      summary: Update a Project Access Request, either by a user response or by the project owner
+      operationId: deletePar
+      produces: 
+      - application/json
+      parameters: 
+      - in: path
+        name: id
+        description: PAR ID
+        required: true
+        type: integer
+      responses: 
+        201: 
+          description: PAR Deleted
+          
+definitions:
+  simpleString:
+    type: string
+    example: "String value"
+  JsonList:
+    type: array
+    items: 
+      type: object
+      properties: 
+        id: 
+          type: string
+          example: 'XNAT_00001'
+        label: 
+          type: string
+          example: 'This is a label'
+        lastModified: 
+          type: string
+          format: date-time
+          example: "2020-05-18T18:53:36.754Z"
+  JsonUser: 
+    type: object
+    properties: 
+      login: 
+        type: string
+        example: 'admin'
+      displayName: 
+        type: string
+        example: 'XNAT Admin'
+      email: 
+        type: string
+        example: 'xnatselenium@gmail.com'
+      firstname:  
+        type: string
+        example: 'Admin'
+      lastname:
+        type: string
+        example: 'Admin'
+      GROUP_ID:
+        type: string
+        example: 'PROJECTID_owner'
+  JsonUserList: 
+    type: array
+    items: 
+      $ref: '#/definitions/JsonUser'
+  JsonPipeline: 
+    type: object
+    properties: 
+      name: 
+        type: string
+        example: 'dcm2nii'
+      path: 
+        type: string
+        example: '/data/xnat/pipelines/executable.xml'
+      generates: 
+        type: string
+        example: 'scan resource: NIFTI'
+      description:  
+        type: string
+        example: 'Pipeline creates NIFTI from DICOM files'
+      datatype:
+        type: string
+        example: 'All Datatypes'
+  JsonPipelineList: 
+    type: array
+    items: 
+      $ref: '#/definitions/JsonPipeline'
+  JsonParam: 
+    type: object
+    properties: 
+      property: 
+        type: string
+        example: 'project-param'
+      value: 
+        $ref: '#/definitions/simpleString'
+  JsonParamList: 
+    type: array
+    items: 
+      $ref: '#/definitions/JsonParam'
+  ParJson:
+    type: object
+    properties: 
+      id: 
+        type: integer
+        example: 1
+      projectId: 
+        type: string
+        example: 'TestProject'
+      status: 
+        type: string
+        example: 'open'
+      email:
+        type: string
+        example: 'user@domain.edu'
